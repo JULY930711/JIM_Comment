@@ -1,11 +1,39 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import {useState,useContext, useEffect} from "react";
+import { Link,useNavigate } from "react-router-dom";
 // import "./CommentMain.css";
 import Header from "../common/Header";
 import Footer from "../common/Footer";
 import { BiSearch } from "react-icons/bi";
+import ThemeContext from "../../contexts/ThemeContext";
+import axios from "axios";
 
 function CommentMain() {
+  const navigate = useNavigate()
+  const [inputvalue,setInputvalue]=useState('')
+  const {gameName, setGameName}=useContext(ThemeContext)
+  const [displaygames,setDisplaygames]=useState([])
+  const [news,setNews]=useState([])
+
+  const getgamesdata=async()=>{
+    const r=await axios.get('http://localhost:3005/api_displaygames')
+    // console.log(r.data)
+    setDisplaygames(r.data)
+    
+  }
+  const getnewsdata=async()=>{
+    const r=await axios.get('http://localhost:3005/api_news')
+    // console.log(r.data)
+    setNews(r.data)
+    
+  }
+  useEffect(()=>{
+    getgamesdata()
+    getnewsdata()
+  },[])
+  useEffect(()=>{
+    setGameName(inputvalue)
+  },[inputvalue])
+  
   return (
     <>
     <Header/>
@@ -23,9 +51,15 @@ function CommentMain() {
             <p className="searchbar_p">讓我加入</p>
             <div className="searchkeywords">
               <div className="searchinput">
-                <input type="text" />
-                <div className="searchicon">
+                <input type="text" value={inputvalue} onChange={(e)=>{setInputvalue(e.target.value)}}/>
+                <div className="searchicon" >
+                <Link to={'/comment-detail/'+gameName} >
+             
                   <BiSearch />
+                
+                
+                  </Link>
+                  
                 </div>
               </div>
             </div>
@@ -34,57 +68,56 @@ function CommentMain() {
 
           <div className="hotspotgames">
             <div className="hotspotgamestitle">熱門遊戲討論</div>
-            <div className="gameskeywords">
-              <div className="gameskeywords_p">#刺激</div>
-              <div className="gameskeywords_p">#刺激</div>
-              <div className="gameskeywords_p">#刺激</div>
-              <div className="gameskeywords_p">#刺激</div>
-              <div className="gameskeywords_p">#刺激</div>
-             
-           
-            
+            <div className="keywordssqure">
+            {news.map((v,i)=>{if(i<5){return   <div className="gameskeywords" >
+            <Link to={'/comment-detail/'+v.gamesName} className='keywords_p' key={i}>
+              <div className="gameskeywords_p">#{v.gamesName}</div>
+              </Link>
+            </div>}})}
             </div>
             <div className="hotspotgamesfield">
               <div className="hotspotgamesqure">
-                <div className="gamesdetail">
+              {displaygames.map((v,i)=>{
+                if(i<2){return <div className="gamesdetail" key={i} >
+                <Link to={'/comment-detail/'+v.gamesName} className='commentmain_link'>
                   <div className="images">
-                    <img />
+                    <img src={'../Images/commentImages/gamesImages/'+v.gamesLogo} alt='' />
                   </div>
 
-                  <p>gamesname</p>
-                </div>
-                <div className="gamesdetail">
-                  <div className="images">
-                    <img />
-                  </div>
-                  <p>gamesname</p>
-                </div>
+                  <p className="imgname" style={{color:'#d01b1b',fontWeight:'bolder'}}>{v.gamesName}</p>
+                  </Link>
+                </div>}
+                console.log(displaygames)
+                console.log(v.gameName)
+              })}
+            
               </div>
               <div className="hotspotgamesqure">
-                <div className="gamesdetail">
+              {displaygames.map((v,i)=>{
+                if(i>1&&i<4){return <div className="gamesdetail" key={i} >
+                <Link to={'/comment-detail/'+v.gamesName} className='commentmain_link'>
                   <div className="images">
-                    <img />
+                    <img src={'../Images/commentImages/gamesImages/'+v.gamesLogo} alt='' />
                   </div>
 
-                  <p>gamesname</p>
-                </div>
-                <div className="gamesdetail">
-                  <div className="images">
-                    <img />
-                  </div>
-                  <p>gamesname</p>
-                </div>
+                  <p className="imgname" style={{color:'#d01b1b',fontWeight:'bolder'}}>{v.gamesName}</p>
+                  </Link>
+                </div>}
+                console.log(displaygames)
+                console.log(v.gameName)
+              })}
+            
               </div>
               <div className="news">
                 <div className="newscomment">
                   <div className="newscommenttitle">最新留言</div>
-                  <div className="newscommentdetail">
+                  {news.map((v,i)=>{if(i<5){return        <div className="newscommentdetail" key={i}>
                     <div className="mentionuser">
                       <p
                         className="mentionusername"
                         style={{ color: "#d01b1b" }}
                       >
-                        hihi
+                        {v.memNickName}
                       </p>
                       <p
                         className="p1"
@@ -94,9 +127,10 @@ function CommentMain() {
                       </p>
                     </div>
                     <div className="newscommentcontent">
-                      這個游戲真的要很用心才能通關！
+                      {v.comment}
                     </div>
-                  </div>
+                  </div>}})}
+           
                 </div>
               </div>
             </div>
