@@ -10,11 +10,11 @@ export const ThemeContextProvider = ({children})=>{
 
 
 
-  const [gameName, setGameName] = useState('等一個人盜墓');
+  const [gameSid, setGameSid] = useState(0);
   
  
   return (
-    <ThemeContext.Provider value={ {gameName, setGameName} }>
+    <ThemeContext.Provider value={ {gameSid, setGameSid} }>
       {children}
     </ThemeContext.Provider>
   )

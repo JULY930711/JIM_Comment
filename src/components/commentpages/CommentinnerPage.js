@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from "react";
-import { Link, useParams,useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Header from "../common/Header";
 import Footer from "../common/Footer";
@@ -10,11 +10,16 @@ import {
   AiTwotoneStar,
   AiOutlineStar,
   AiFillLike,
+  AiOutlineLike,
+  AiFillDislike,
   AiOutlineDislike,
 } from "react-icons/ai";
 import { ImUsers } from "react-icons/im";
 import { BiTimeFive } from "react-icons/bi";
 import { FiMapPin } from "react-icons/fi";
+
+const usersid = localStorage.getItem("usersid");
+console.log(usersid);
 
 function CommentinnerPage() {
   const { gameName, setGameName } = useContext(ThemeContext);
@@ -24,10 +29,12 @@ function CommentinnerPage() {
   const [commentuser, setCommentuser] = useState([]);
   const [replycomment, setReplycomment] = useState([]);
   const [randomgame, setRandomgame] = useState([]);
-  const [liked,setLiked]=useState(0)
+  const [myliked, setMyliked] = useState([]);
+  const [btnstate, setBtnstate] = useState(false);
+  const [textareavalue,setTextareavalue]=useState('')
+
   let { mygamesName } = useParams();
-  const navigate = useNavigate()
-  console.log(mygamesName);
+  const navigate = useNavigate();
 
   const getgamedetail = async () => {
     const r = await axios.get(
@@ -52,7 +59,7 @@ function CommentinnerPage() {
 
     const result = r.data;
     const newresult = result.map((v, i) => {
-      return { ...v, toggle: false };
+      return { ...v, toggle: false, toggleliked: false, toggledisliked: false };
     });
 
     setCommentuser(newresult);
@@ -66,19 +73,24 @@ function CommentinnerPage() {
     const r = await axios.get("http://localhost:3005/api_random");
     setRandomgame(r.data);
   };
-useEffect(()=>{
-  getreplydata();
-  getrandomdata();
-},[])
+
+  const getlikedata = async () => {
+    const r = await axios.get("http://localhost:3005/api_liked");
+    setMyliked(r.data);
+  };
+
   useEffect(() => {
+    getreplydata();
+    getrandomdata();
     getgamedetail();
     getavrage();
     getcommentuser();
-   
-  }, []);
-  {
-    console.log(commentuser);
-  }
+    getlikedata();
+  }, [mygamesName]);
+  
+
+  //   {const likedtotal=myliked.reduce((acc,v)=>{return acc+v.liked})
+  // console.log(likedtotal)}
 
   return (
     <>
@@ -109,7 +121,7 @@ useEffect(()=>{
 
               <>
                 {gamedetail.map((v, i) => {
-                  return (
+                  return (<>
                     <div className="gamedetail" key={i}>
                       <div className="img2">
                         <img
@@ -176,11 +188,7 @@ useEffect(()=>{
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-              </>
-
-              <div className="rate">
+                    <div className="rate">
                 {[...Array(5)].map((v, i) => {
                   if (i + 1 <= ratescore) {
                     return (
@@ -210,13 +218,51 @@ useEffect(()=>{
               <div className="input2">
                 <textarea
                   className="commentinput"
-                  defaultValue="請寫下你想說的話..."
+                  defaultValue={textareavalue}
+                  onChange={(e)=>{setTextareavalue(e.target.value)}}
                 ></textarea>
               </div>
               <div className="inputbtns">
-                <div className="pics">圖片</div>
-                <div>提交</div>
-              </div>
+                <div className="pics">
+                  <button
+                    className="picbtn"
+                   
+                  >
+                    圖片
+                    <input
+                    type="file"
+                    className="hiddenpicbtn"
+                    onChange={(e)=>{
+                      console.log(e.target.files[0].name)
+                      
+                      console.log(e.target)
+                    }}
+                  />
+                  </button>
+                
+                </div>
+
+                <div>
+                  <button type="submit" className="submit" onClick={(e)=>{
+                   e.preventDefault()
+                 
+                   axios.post("http://localhost:3005/insertcomment",{
+                    "usersid":usersid,
+                    "gamessid":v.gamesSid,
+                    "rate":ratescore,
+                
+                    "comment":textareavalue
+                    
+                   })
+
+                  setTextareavalue('')
+                  }}>提交</button>
+                </div>
+              </div> </> );
+                })}
+              </>
+
+            
 
               <div className="commentandgames">
                 <div className="commentandreplyfiled">
@@ -277,12 +323,56 @@ useEffect(()=>{
                             >
                               回覆
                             </button>
-                            <div className="liked">
-                              <AiFillLike />
+                            <div
+                              className="liked"
+                              onClick={() => {
+                                const likecommentuser = commentuser.map(
+                                  (v4, i4) => {
+                                    if (v4.sid === v.sid) {
+                                      return {
+                                        ...v4,
+                                        toggleliked: !v4.toggleliked,
+                                        toggledisliked: 0,
+                                      };
+                                    } else {
+                                      return { ...v4 };
+                                    }
+                                  }
+                                );
+                                setCommentuser(likecommentuser);
+                              }}
+                            >
+                              {v.toggleliked ? (
+                                <AiFillLike />
+                              ) : (
+                                <AiOutlineLike />
+                              )}
                               123
                             </div>
-                            <div className="disliked">
-                              <AiOutlineDislike />
+                            <div
+                              className="disliked"
+                              onClick={() => {
+                                const dislikecommentuser = commentuser.map(
+                                  (v5, i5) => {
+                                    if (v5.sid === v.sid) {
+                                      return {
+                                        ...v5,
+                                        toggledisliked: !v5.toggledisliked,
+                                        toggleliked: 0,
+                                      };
+                                    } else {
+                                      return { ...v5 };
+                                    }
+                                  }
+                                );
+                                setCommentuser(dislikecommentuser);
+                              }}
+                            >
+                              {v.toggledisliked ? (
+                                <AiFillDislike />
+                              ) : (
+                                <AiOutlineDislike />
+                              )}
                               12
                             </div>
                             <p className="apartline">
@@ -299,9 +389,24 @@ useEffect(()=>{
                                 />
                               </div>
                               <div className="inputbtns">
-                                <div className="pics">圖片</div>
-                                <div>提交</div>
-                              </div>
+                <div className="pics">
+                  <button
+                    className="picbtn"
+                   
+                  >
+                    圖片
+                    <input
+                    type="file"
+                    className="hiddenpicbtn"
+                  />
+                  </button>
+                
+                </div>
+
+                <div>
+                  <button type="submit" className="submit">提交</button>
+                </div>
+              </div>
                             </div>
                           ) : null}
                           {replycomment.map((v3, i3) => {
@@ -340,24 +445,26 @@ useEffect(()=>{
                   {randomgame.map((v, i) => {
                     return (
                       <>
-                        {" "}
                         <div className="recommandtitle" key={i}>
-                          其他熱門討論推介
+                          其他遊戲推介
                         </div>
-                        <div className="gamesdetail" >
-                        {/* <Link to={'/comment-detail/'+gameName} > */}
-                          <div className="images">
-                            <img
-                              src={
-                                "../Images/commentImages/gamesImages/" +
-                                v.gamesLogo
-                              }
-                              alt=""
-                            />
-                          </div>
+                        <div className="gamesdetail">
+                          <Link
+                            to={"/comment-detail/" + v.gamesSid}
+                            className="commentmain_link"
+                          >
+                            <div className="images">
+                              <img
+                                src={
+                                  "../Images/commentImages/gamesImages/" +
+                                  v.gamesLogo
+                                }
+                                alt=""
+                              />
+                            </div>
 
-                          <p className="recommandgamename">{v.gamesName}</p>
-                          {/* </Link> */}
+                            <p className="recommandgamename">{v.gamesName}</p>
+                          </Link>
                         </div>
                       </>
                     );
